@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MCP Communication Monitor</title>
+    <link rel="stylesheet" href="../base.css">
+</head>
+<body>
+<div class="container">
+    <h1>MCP Communication Monitor</h1>
+    <p class="info-text">Web Portal: <code>http://127.0.0.1:5000</code><br>Monitoring MCP requests from Claude Desktop and Claude Web</p>
+    <h2>Pending Requests <span id="pending-count">0</span></h2>
+    <div id="pending-requests">
+        {% if pending %}
+            {% for req in pending %}
+            <div class="request-card pending" id="req-card-{req.id}">
+                <div class="card-header">
+                    <span class="card-id">ID: {{ req.id }}</span>
+                    <span class="status-badge pending">{{ req.status.value }}</span>
+                </div>
+                <div class="card-server">Server: {{ req.server }}</div>
+                <div class="card-tool">Tool: {{ req.tool }}</div>
+                <div class="parameters" id="params-{req.id}">
+                    <strong>Parameters:</strong> 
+                    <code>{{ req.parameters | tojson | safe | truncate(200) }}</code>
+                </div>
+                <div class="action-buttons">
+                    <button class="btn btn-allow" onclick="submitDecision('{req.id}', 'allow')">Allow</button>
+                    <button class="btn btn-block" onclick="submitDecision('{req.id}', 'block')">Block</button>
+                </div>
+            </div>
+            {% endfor %}
+        {% else %}
+            <p class="no-requests">No pending requests.</p>
+        {% endif %}
+    </div>
+    <h2>Recent Decisions</h2>
+    <div id="recent-requests">
+        {% if recent %}
+            {% for req in recent %}
+            <div class="request-card {{ 'allowed' if req.status == 'allowed' else 'blocked' }}">
+                <div class="card-header">
+                    <span class="card-id">ID: {{ req.id }}</span>
+                    <span class="status-badge {{ req.status }}">{{ req.status.value }}</span>
+                </div>
+                <div class="card-server">Server: {{ req.server }}</div>
+                <div class="card-tool">Tool: {{ req.tool }}</div>
+                <div class="info-text">
+                    <strong>Decision:</strong> {{ req.user_decision }} 
+                    {{ req.timestamp }}
+                </div>
+            </div>
+        {% endfor %}
+        {% else %}
+            <p class="no-requests">No recent decisions.</p>
+        {% endif %}
+    </div>
+</div>

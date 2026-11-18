@@ -1,0 +1,57 @@
+<script>
+    function updateRequests() {
+        fetch('/api/requests')
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById('pending-count').textContent = data.pending.length;
+                const pendingContainer = document.getElementById('pending-requests');
+                if (data.pending.length === 0) {
+                    pendingContainer.innerHTML = '<p class="no-requests">No pending requests.</p>';
+                    return;
+                }
+                let html = '';
+                data.pending.forEach(req => {
+                    html += `<div class="request-card pending" id="req-card-${req.id}">
+                        <div class="card-header">
+                            <span class="card-id">ID: {req.id}</span>
+                            <span class="status-badge pending">{{ req.status.value }}</span>
+                        </div>
+                        <div class="card-server">Server: {{ req.server }}</div>
+                        <div class="card-tool">Tool: {{ req.tool }}</div>
+                        <div class="parameters" id="params-${req.id}">
+                            <strong>Parameters:</strong> 
+                            <code>{{ req.parameters | tojson | safe | truncate(200) }}</code>
+                        </div>
+                        <div class="action-buttons">
+                            <button class="btn btn-allow" onclick="submitDecision('${req.id}', 'allow')">Allow</button>
+                            <button class="btn btn-block" onclick="submitDecision('${req.id}', 'block')">Block</button>
+                        </div>
+                    </div>`;
+                });
+                pendingContainer.innerHTML = html;
+            })
+            .catch(err => console.error('Error:', err));
+    }
+    
+    function submitDecision(requestId, decision) {
+        if (!confirm(`Are you sure you want to ${decision} this MCP request?`)) return;
+        fetch('/decision', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ request_id: requestId, decision: decision })
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (data.status === 'success') {
+                setTimeout(() => { const c = document.getElementById('req-card-' + requestId); if(c) c.remove(); }, 500);
+                updateRequests();
+            }
+        })
+        .catch(err => console.error(err));
+    }
+    
+    updateRequests();
+    setInterval(updateRequests, 2000);
+</script>
+</body>
+</html>
